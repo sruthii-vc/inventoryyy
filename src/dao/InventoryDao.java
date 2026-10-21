@@ -81,8 +81,8 @@ public class InventoryDao {
             }
         } catch (SQLException e) { e.printStackTrace(); return false; }
     }
-}
-// Fetch all sales history records
+
+    // Fetch all sales history records
     public List<model.Sale> getAllSales() {
         List<model.Sale> list = new ArrayList<>();
         String query = "SELECT * FROM sales ORDER BY sale_date DESC";
@@ -120,3 +120,4 @@ public class InventoryDao {
         }
         return total;
     }
+} // 

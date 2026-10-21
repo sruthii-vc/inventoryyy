@@ -1,48 +1,94 @@
 package view;
 
-import dao.AuthDao;
+import dao.InventoryDao;
 import model.User;
 
 import javax.swing.*;
 import java.awt.*;
 
 public class LoginFrame extends JFrame {
-    private JTextField userField;
-    private JPasswordField passField;
+    private JTextField usernameField;
+    private JPasswordField passwordField;
 
     public LoginFrame() {
-        setTitle("Inventory Management System - Login");
-        setSize(360, 220);
+        setTitle("Login - Inventory Management System");
+        setSize(400, 250); // Compact and neat size
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-        setLayout(new GridLayout(4, 2, 10, 10));
+        setLocationRelativeTo(null); // Centers on screen
+        setLayout(new BorderLayout(10, 10));
 
-        add(new JLabel("  Username:"));
-        userField = new JTextField();
-        add(userField);
+        // Title Header
+        JLabel titleLabel = new JLabel("System Login", JLabel.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        titleLabel.setBorder(BorderFactory.createEmptyBorder(15, 0, 5, 0));
+        add(titleLabel, BorderLayout.NORTH);
 
-        add(new JLabel("  Password:"));
-        passField = new JPasswordField();
-        add(passField);
+        // Form Center Panel
+        JPanel centerPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(8, 8, 8, 8);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        add(new JLabel("  (admin/admin123)"));
+        // Username
+        gbc.gridx = 0; gbc.gridy = 0;
+        centerPanel.add(new JLabel("Username:"), gbc);
+
+        gbc.gridx = 1; gbc.gridy = 0;
+        usernameField = new JTextField(15);
+        centerPanel.add(usernameField, gbc);
+
+        // Password
+        gbc.gridx = 0; gbc.gridy = 1;
+        centerPanel.add(new JLabel("Password:"), gbc);
+
+        gbc.gridx = 1; gbc.gridy = 1;
+        passwordField = new JPasswordField(15);
+        centerPanel.add(passwordField, gbc);
+
+        add(centerPanel, BorderLayout.CENTER);
+
+        // Bottom Button Panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         JButton loginBtn = new JButton("Login");
-        add(loginBtn);
+        loginBtn.setPreferredSize(new Dimension(100, 30));
+        buttonPanel.add(loginBtn);
+        
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
+        add(buttonPanel, BorderLayout.SOUTH);
 
+        // Login Button Action Listener
         loginBtn.addActionListener(e -> {
-            String u = userField.getText().trim();
-            String p = new String(passField.getPassword()).trim();
-            User user = AuthDao.login(u, p);
-            if (user != null) {
-                dispose();
-                user.openDashboard();
+            String username = usernameField.getText().trim();
+            String password = new String(passwordField.getPassword()).trim();
+
+            if (username.isEmpty() || password.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Please fill in all fields.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Temporary simulation for testing layout:
+            if (username.equals("admin") && password.equals("admin")) {
+                // Instantiate abstract User via an anonymous subclass fulfilling openDashboard()
+                User user = new User(1, "admin", "Admin") {
+                    @Override
+                    public void openDashboard() {
+                        // Satisfies the abstract method requirement
+                    }
+                };
+                
+                JOptionPane.showMessageDialog(this, "Login Successful!");
+                new DashboardFrame(user).setVisible(true);
+                dispose(); // Close login window
             } else {
-                JOptionPane.showMessageDialog(this, "Invalid Login Credentials!");
+                JOptionPane.showMessageDialog(this, "Invalid username or password.", "Login Failed", JOptionPane.ERROR_MESSAGE);
             }
         });
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new LoginFrame().setVisible(true));
+        // Ensures smooth UI rendering
+        SwingUtilities.invokeLater(() -> {
+            new LoginFrame().setVisible(true);
+        });
     }
 }

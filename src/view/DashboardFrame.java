@@ -132,7 +132,6 @@ public class DashboardFrame extends JFrame {
                 double tax = subtotal * 0.05; // 5% tax simulation
                 double grandTotal = subtotal + tax;
 
-                // Prompt user for money / cash payment
                 String cashInput = JOptionPane.showInputDialog(this, 
                     "--- INVOICE SUMMARY ---\n" +
                     "Product: " + productName + "\n" +
@@ -153,7 +152,6 @@ public class DashboardFrame extends JFrame {
 
                 double change = cashPaid - grandTotal;
 
-                // Process database stock-out and record sale
                 if (dao.processCheckout(selectedId, productName, buyQty, grandTotal, currentStock)) {
                     JOptionPane.showMessageDialog(this, 
                         "=== PAYMENT SUCCESSFUL ===\n" +
@@ -172,3 +170,28 @@ public class DashboardFrame extends JFrame {
                 JOptionPane.showMessageDialog(this, "Please enter valid numbers for quantity and cash payment.", "Input Error", JOptionPane.ERROR_MESSAGE);
             }
         });
+
+        clearBtn.addActionListener(e -> clear());
+        logoutBtn.addActionListener(e -> {
+            dispose();
+            // Assuming you have a LoginFrame class
+            // new LoginFrame().setVisible(true);
+        });
+    } // Closes DashboardFrame constructor
+
+    private void loadData() {
+        model.setRowCount(0);
+        List<Product> products = dao.getAllProducts();
+        for (Product p : products) {
+            model.addRow(new Object[]{p.getId(), p.getName(), p.getQuantity(), p.getPrice()});
+        }
+    }
+
+    private void clear() {
+        selectedId = -1;
+        nameField.setText("");
+        qtyField.setText("");
+        priceField.setText("");
+        table.clearSelection();
+    }
+} 
