@@ -1,6 +1,6 @@
 package view;
 
-import dao.InventoryDao;
+import dao.AuthDao;
 import model.User;
 
 import javax.swing.*;
@@ -12,9 +12,9 @@ public class LoginFrame extends JFrame {
 
     public LoginFrame() {
         setTitle("Login - Inventory Management System");
-        setSize(400, 250); // Compact and neat size
+        setSize(400, 250);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null); // Centers on screen
+        setLocationRelativeTo(null);
         setLayout(new BorderLayout(10, 10));
 
         // Title Header
@@ -32,7 +32,6 @@ public class LoginFrame extends JFrame {
         // Username
         gbc.gridx = 0; gbc.gridy = 0;
         centerPanel.add(new JLabel("Username:"), gbc);
-
         gbc.gridx = 1; gbc.gridy = 0;
         usernameField = new JTextField(15);
         centerPanel.add(usernameField, gbc);
@@ -40,7 +39,6 @@ public class LoginFrame extends JFrame {
         // Password
         gbc.gridx = 0; gbc.gridy = 1;
         centerPanel.add(new JLabel("Password:"), gbc);
-
         gbc.gridx = 1; gbc.gridy = 1;
         passwordField = new JPasswordField(15);
         centerPanel.add(passwordField, gbc);
@@ -52,11 +50,10 @@ public class LoginFrame extends JFrame {
         JButton loginBtn = new JButton("Login");
         loginBtn.setPreferredSize(new Dimension(100, 30));
         buttonPanel.add(loginBtn);
-        
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
         add(buttonPanel, BorderLayout.SOUTH);
 
-        // Login Button Action Listener
+        // Login Button Action — calls database via AuthDao
         loginBtn.addActionListener(e -> {
             String username = usernameField.getText().trim();
             String password = new String(passwordField.getPassword()).trim();
@@ -66,29 +63,22 @@ public class LoginFrame extends JFrame {
                 return;
             }
 
-            // Temporary simulation for testing layout:
-            if (username.equals("admin") && password.equals("admin")) {
-                // Instantiate abstract User via an anonymous subclass fulfilling openDashboard()
-                User user = new User(1, "admin", "Admin") {
-                    @Override
-                    public void openDashboard() {
-                        // Satisfies the abstract method requirement
-                    }
-                };
-                
-                JOptionPane.showMessageDialog(this, "Login Successful!");
+            User user = AuthDao.login(username, password);
+
+            if (user != null) {
+                JOptionPane.showMessageDialog(this, "Login Successful! Welcome, " + user.getUsername() + " (" + user.getRole() + ")");
                 new DashboardFrame(user).setVisible(true);
-                dispose(); // Close login window
+                dispose();
             } else {
                 JOptionPane.showMessageDialog(this, "Invalid username or password.", "Login Failed", JOptionPane.ERROR_MESSAGE);
             }
         });
+
+        // Allow pressing Enter to login
+        getRootPane().setDefaultButton(loginBtn);
     }
 
     public static void main(String[] args) {
-        // Ensures smooth UI rendering
-        SwingUtilities.invokeLater(() -> {
-            new LoginFrame().setVisible(true);
-        });
+        SwingUtilities.invokeLater(() -> new LoginFrame().setVisible(true));
     }
 }
