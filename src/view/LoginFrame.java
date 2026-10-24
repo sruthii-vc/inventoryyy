@@ -5,6 +5,8 @@ import model.User;
 
 import javax.swing.*;
 import java.awt.*;
+import java.security.GeneralSecurityException;
+import java.sql.SQLException;
 
 public class LoginFrame extends JFrame {
     private JTextField usernameField;
@@ -56,21 +58,33 @@ public class LoginFrame extends JFrame {
         // Login Button Action — calls database via AuthDao
         loginBtn.addActionListener(e -> {
             String username = usernameField.getText().trim();
-            String password = new String(passwordField.getPassword()).trim();
+            char[] password = passwordField.getPassword();
 
-            if (username.isEmpty() || password.isEmpty()) {
+            if (username.isEmpty() || password.length == 0) {
+                java.util.Arrays.fill(password, '\0');
                 JOptionPane.showMessageDialog(this, "Please fill in all fields.", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            User user = AuthDao.login(username, password);
-
-            if (user != null) {
-                JOptionPane.showMessageDialog(this, "Login Successful! Welcome, " + user.getUsername() + " (" + user.getRole() + ")");
-                new DashboardFrame(user).setVisible(true);
-                dispose();
-            } else {
-                JOptionPane.showMessageDialog(this, "Invalid username or password.", "Login Failed", JOptionPane.ERROR_MESSAGE);
+            try {
+                User user = AuthDao.login(username, password);
+                if (user != null) {
+                    JOptionPane.showMessageDialog(this, "Login Successful! Welcome, " + user.getUsername() + " (" + user.getRole() + ")");
+                    new DashboardFrame(user).setVisible(true);
+                    dispose();
+                } else {
+                    JOptionPane.showMessageDialog(this, "Invalid username or password.", "Login Failed", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(this,
+                    "Could not connect to the database. Check your database settings and try again.\n" + ex.getMessage(),
+                    "Database Error", JOptionPane.ERROR_MESSAGE);
+            } catch (GeneralSecurityException ex) {
+                JOptionPane.showMessageDialog(this,
+                    "Could not securely verify the password. Please contact the system administrator.",
+                    "Authentication Error", JOptionPane.ERROR_MESSAGE);
+            } finally {
+                java.util.Arrays.fill(password, '\0');
             }
         });
 

@@ -1,4 +1,6 @@
 package model;
+
+import javax.swing.JOptionPane;
 import view.DashboardFrame;
 
 public abstract class User {
@@ -15,6 +17,8 @@ public abstract class User {
     public String getUsername() { return username; }
     public String getRole() { return role; }
 
-    // Polymorphic dashboard launcher
-    public abstract void openDashboard();
+    public void openDashboard() {
+        JOptionPane.showMessageDialog(null, "Welcome " + role + ": " + username);
+        new DashboardFrame(this).setVisible(true);
+    }
 }

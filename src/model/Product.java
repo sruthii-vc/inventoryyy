@@ -18,6 +18,6 @@ public class Product extends InventoryItem {
 
     @Override
     public String getItemDetails() {
-        return "ID: " + id + " | Product: " + name + " | Stock: " + quantity + " | Price: $" + price;
+        return "ID: " + id + " | Product: " + name + " | Stock: " + quantity + " | Price: ₹" + price;
     }
 }

@@ -1,35 +1,61 @@
 package dao;
 
 import model.*;
+
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
 import java.sql.*;
 
 public class AuthDao {
-    public static User login(String username, String password) {
-        String query = "SELECT * FROM users WHERE username = ? AND password = ?";
+    public static User login(String username, char[] password) throws SQLException, GeneralSecurityException {
+        String query = "SELECT id, username, password, role FROM users WHERE username = ?";
+        int id;
+        String storedUsername;
+        String storedPassword;
+        String role;
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
-            
-            System.out.println("✅ Database Connected Successfully!");
-            
             pstmt.setString(1, username);
-            pstmt.setString(2, password);
-            ResultSet rs = pstmt.executeQuery();
-
-            if (rs.next()) {
-                int id = rs.getInt("id");
-                String role = rs.getString("role");
-                System.out.println("✅ User Found! Role: " + role);
-
-                if (role.equalsIgnoreCase("Admin")) return new Admin(id, username);
-                if (role.equalsIgnoreCase("Staff")) return new Staff(id, username);
-                if (role.equalsIgnoreCase("Customer")) return new Customer(id, username);
-            } else {
-                System.out.println("❌ No user found matching username: '" + username + "' and password.");
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                id = rs.getInt("id");
+                storedUsername = rs.getString("username");
+                storedPassword = rs.getString("password");
+                role = rs.getString("role");
             }
-        } catch (SQLException e) {
-            System.out.println("❌ Database Connection or SQL Error:");
-            e.printStackTrace();
+
+            boolean hashed = PasswordHasher.isHashed(storedPassword);
+            boolean valid = hashed
+                ? PasswordHasher.verify(password, storedPassword)
+                : MessageDigest.isEqual(
+                    new String(password).getBytes(StandardCharsets.UTF_8),
+                    storedPassword.getBytes(StandardCharsets.UTF_8));
+            if (!valid) {
+                return null;
+            }
+
+            if (!hashed) {
+                String upgradedPassword = PasswordHasher.hash(password);
+                try (PreparedStatement update = conn.prepareStatement(
+                        "UPDATE users SET password = ? WHERE id = ?")) {
+                    update.setString(1, upgradedPassword);
+                    update.setInt(2, id);
+                    if (update.executeUpdate() != 1) {
+                        throw new SQLException("Could not upgrade the stored password hash.");
+                    }
+                }
+            }
+
+            if ("Admin".equalsIgnoreCase(role)) {
+                return new Admin(id, storedUsername);
+            }
+            if ("Staff".equalsIgnoreCase(role)) {
+                return new Staff(id, storedUsername);
+            }
+            return null;
         }
-        return null;
     }
 }
