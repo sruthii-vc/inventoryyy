@@ -15,19 +15,63 @@ CREATE TABLE IF NOT EXISTS users (
     id       INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50)  NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
-    role     ENUM('Admin', 'Staff') NOT NULL
+    role     ENUM('Admin', 'Staff', 'Supplier') NOT NULL
 );
 
 ALTER TABLE users MODIFY password VARCHAR(255) NOT NULL;
 
+CREATE TABLE IF NOT EXISTS suppliers (
+    id            INT AUTO_INCREMENT PRIMARY KEY,
+    user_id       INT          NOT NULL UNIQUE,
+    supplier_name VARCHAR(100) NOT NULL,
+    email         VARCHAR(255),
+    phone         VARCHAR(50),
+    CONSTRAINT fk_suppliers_user
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- ── Products Table ───────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS products (
-    id       INT AUTO_INCREMENT PRIMARY KEY,
-    name     VARCHAR(100) NOT NULL,
-    quantity INT          NOT NULL DEFAULT 0,
-    price    DOUBLE       NOT NULL DEFAULT 0.0,
-    CONSTRAINT chk_products_quantity_nonnegative CHECK (quantity >= 0)
+    id               INT AUTO_INCREMENT PRIMARY KEY,
+    name             VARCHAR(100) NOT NULL,
+    quantity         INT          NOT NULL DEFAULT 0,
+    price            DOUBLE       NOT NULL DEFAULT 0.0,
+    supplier_id      INT          NULL,
+    minimum_quantity INT          NOT NULL DEFAULT 5,
+    CONSTRAINT chk_products_quantity_nonnegative CHECK (quantity >= 0),
+    CONSTRAINT fk_products_supplier
+        FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL
 );
+
+SET @supplier_id_column_exists = (
+    SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'products'
+      AND COLUMN_NAME = 'supplier_id'
+);
+SET @add_supplier_id_column = IF(
+    @supplier_id_column_exists = 0,
+    'ALTER TABLE products ADD COLUMN supplier_id INT NULL',
+    'SELECT 1'
+);
+PREPARE supplier_id_column_statement FROM @add_supplier_id_column;
+EXECUTE supplier_id_column_statement;
+DEALLOCATE PREPARE supplier_id_column_statement;
+
+SET @minimum_quantity_column_exists = (
+    SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'products'
+      AND COLUMN_NAME = 'minimum_quantity'
+);
+SET @add_minimum_quantity_column = IF(
+    @minimum_quantity_column_exists = 0,
+    'ALTER TABLE products ADD COLUMN minimum_quantity INT NOT NULL DEFAULT 5',
+    'SELECT 1'
+);
+PREPARE minimum_quantity_column_statement FROM @add_minimum_quantity_column;
+EXECUTE minimum_quantity_column_statement;
+DEALLOCATE PREPARE minimum_quantity_column_statement;
 
 SET @quantity_constraint_exists = (
     SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS

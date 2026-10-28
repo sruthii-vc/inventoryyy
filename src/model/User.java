@@ -16,7 +16,7 @@ public abstract class User {
 
     public String getUsername() { return username; }
     public String getRole() { return role; }
-
+    public int getId() { return id; }
     public void openDashboard() {
         JOptionPane.showMessageDialog(null, "Welcome " + role + ": " + username);
         new DashboardFrame(this).setVisible(true);

@@ -16,36 +16,104 @@ public class CreateUser {
         System.out.print("Enter normal password: ");
         char[] password = sc.nextLine().toCharArray();
 
-        System.out.print("Enter role (Admin/Staff): ");
+        System.out.print("Enter role (Admin/Staff/Supplier): ");
         String role = sc.nextLine().trim();
 
         if (!role.equalsIgnoreCase("Admin")
-                && !role.equalsIgnoreCase("Staff")) {
-            System.out.println("Invalid role! Enter Admin or Staff.");
+                && !role.equalsIgnoreCase("Staff")
+                && !role.equalsIgnoreCase("Supplier")) {
+            System.out.println(
+                "Invalid role! Enter Admin, Staff, or Supplier.");
             Arrays.fill(password, '\0');
             sc.close();
             return;
         }
 
-        String storedRole = role.equalsIgnoreCase("Admin")
-                ? "Admin" : "Staff";
+        String storedRole;
+        if (role.equalsIgnoreCase("Admin")) {
+            storedRole = "Admin";
+        } else if (role.equalsIgnoreCase("Staff")) {
+            storedRole = "Staff";
+        } else {
+            storedRole = "Supplier";
+        }
+
+        System.out.print("Enter supplier name (press Enter if not Supplier): ");
+        String supplierName = sc.nextLine().trim();
+
+        System.out.print("Enter supplier email (optional): ");
+        String email = sc.nextLine().trim();
+
+        System.out.print("Enter supplier phone (optional): ");
+        String phone = sc.nextLine().trim();
 
         try {
             String hash = PasswordHasher.hash(password);
 
-            try (Connection con = DatabaseConnection.getInstance().getConnection();
-                 PreparedStatement ps = con.prepareStatement(
-                     "INSERT INTO users (username, password, role) VALUES (?, ?, ?)")) {
+            try (Connection con =
+                     DatabaseConnection.getInstance().getConnection()) {
 
-                ps.setString(1, username);
-                ps.setString(2, hash);
-                ps.setString(3, storedRole);
+                con.setAutoCommit(false);
 
-                ps.executeUpdate();
-                System.out.println(storedRole + " user created successfully!");
+                try {
+                    int userId;
+
+                    try (PreparedStatement ps = con.prepareStatement(
+                            "INSERT INTO users (username, password, role) "
+                            + "VALUES (?, ?, ?)",
+                            java.sql.Statement.RETURN_GENERATED_KEYS)) {
+
+                        ps.setString(1, username);
+                        ps.setString(2, hash);
+                        ps.setString(3, storedRole);
+                        ps.executeUpdate();
+
+                        try (java.sql.ResultSet keys =
+                                 ps.getGeneratedKeys()) {
+                            if (!keys.next()) {
+                                throw new SQLException(
+                                    "Could not retrieve the new user ID.");
+                            }
+                            userId = keys.getInt(1);
+                        }
+                    }
+
+                    if (storedRole.equals("Supplier")) {
+                        if (supplierName.isEmpty()) {
+                            throw new SQLException(
+                                "Supplier name is required.");
+                        }
+
+                        try (PreparedStatement ps = con.prepareStatement(
+                                "INSERT INTO suppliers "
+                                + "(user_id, supplier_name, email, phone) "
+                                + "VALUES (?, ?, ?, ?)")) {
+
+                            ps.setInt(1, userId);
+                            ps.setString(2, supplierName);
+                            ps.setString(3,
+                                email.isEmpty() ? null : email);
+                            ps.setString(4,
+                                phone.isEmpty() ? null : phone);
+                            ps.executeUpdate();
+                        }
+                    }
+
+                    con.commit();
+                    System.out.println(
+                        storedRole + " user created successfully!");
+
+                } catch (Exception e) {
+                    con.rollback();
+                    throw e;
+                } finally {
+                    con.setAutoCommit(true);
+                }
             }
+
         } catch (Exception e) {
-            System.out.println("Could not create user: " + e.getMessage());
+            System.out.println(
+                "Could not create user: " + e.getMessage());
         } finally {
             Arrays.fill(password, '\0');
             sc.close();

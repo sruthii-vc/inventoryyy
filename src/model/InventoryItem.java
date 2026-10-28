@@ -12,6 +12,5 @@ public abstract class InventoryItem {
     public int getId() { return id; }
     public String getName() { return name; }
 
-    // Abstract method for Polymorphism
     public abstract String getItemDetails();
 }

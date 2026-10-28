@@ -7,6 +7,8 @@ import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.sql.*;
 
+
+
 public class AuthDao {
     public static User login(String username, char[] password) throws SQLException, GeneralSecurityException {
         String query = "SELECT id, username, password, role FROM users WHERE username = ?";
@@ -54,6 +56,9 @@ public class AuthDao {
             }
             if ("Staff".equalsIgnoreCase(role)) {
                 return new Staff(id, storedUsername);
+            }
+            if ("Supplier".equalsIgnoreCase(role)) {
+                return new Supplier(id, storedUsername);
             }
             return null;
         }
