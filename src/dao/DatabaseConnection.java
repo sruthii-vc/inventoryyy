@@ -14,7 +14,6 @@ public class DatabaseConnection {
         new DatabaseConnection();
 
 private DatabaseConnection() {
-    // Prevent objects from being created outside this class.
 }
 
 public static DatabaseConnection getInstance() {

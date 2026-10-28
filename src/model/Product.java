@@ -1,6 +1,8 @@
 package model;
 
-public class Product extends InventoryItem {
+public class Product extends InventoryItem implements Trackable{
+
+
     private int quantity;
     private double price;
 
@@ -15,6 +17,11 @@ public class Product extends InventoryItem {
 
     public double getPrice() { return price; }
     public void setPrice(double price) { this.price = price; }
+
+    @Override
+    public String getTrackingDetails() {
+        return getItemDetails();
+    }
 
     @Override
     public String getItemDetails() {
