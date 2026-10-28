@@ -10,9 +10,19 @@ import java.nio.file.Path;
 import java.util.Properties;
 
 public class DatabaseConnection {
-    private static final String DEFAULT_URL = "jdbc:mysql://localhost:3306/inventory_db?useSSL=false&serverTimezone=UTC";
+    private static final DatabaseConnection INSTANCE =
+        new DatabaseConnection();
 
-    public static Connection getConnection() throws SQLException {
+private DatabaseConnection() {
+    // Prevent objects from being created outside this class.
+}
+
+public static DatabaseConnection getInstance() {
+    return INSTANCE;
+}
+    private static final String DEFAULT_URL = "jdbc:mysql://localhost:3306/inventory_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
+
+    public Connection getConnection() throws SQLException {
         Properties localSettings = loadLocalSettings();
         String url = setting("INVENTORY_DB_URL", "url", DEFAULT_URL, localSettings);
         String username = setting("INVENTORY_DB_USER", "user", null, localSettings);
